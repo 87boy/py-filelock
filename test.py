@@ -47,7 +47,6 @@ class ExThread(threading.Thread):
     def __init__(self, *args, **kargs):
         threading.Thread.__init__(self, *args, **kargs)
         self.ex = None
-        return None
 
     def run(self):
         try:
@@ -56,7 +55,7 @@ class ExThread(threading.Thread):
             self.ex = sys.exc_info()
         return None
 
-    def join(self):
+    def join(self, timeout=None):
         threading.Thread.join(self)
         if self.ex is not None:
             if PY3:
@@ -111,7 +110,7 @@ class BaseTest(object):
         self.assertFalse(lock.is_locked)
         return None
 
-    def test_nested(self):
+    def test_nested1(self):
         """
         Asserts, that the lock is not released before the most outer with
         statement that locked the lock, is left.
@@ -125,17 +124,20 @@ class BaseTest(object):
             with lock as l2:
                 self.assertTrue(lock.is_locked)
                 self.assertTrue(lock is l2)
+                self.assertTrue(l1 is l2)
 
                 with lock as l3:
                     self.assertTrue(lock.is_locked)
                     self.assertTrue(lock is l3)
+                    self.assertTrue(l1 is l3)
+                    self.assertTrue(l2 is l3)
 
                 self.assertTrue(lock.is_locked)
             self.assertTrue(lock.is_locked)
         self.assertFalse(lock.is_locked)
         return None
 
-    def test_nested1(self):
+    def test_nested2(self):
         """
         The same as *test_nested*, but this method uses the *acquire()* method
         to create the lock, rather than the implicit *__enter__* method.
@@ -149,10 +151,13 @@ class BaseTest(object):
             with lock.acquire() as l2:
                 self.assertTrue(lock.is_locked)
                 self.assertTrue(lock is l2)
+                self.assertTrue(l1 is l2)
 
                 with lock.acquire() as l3:
                     self.assertTrue(lock.is_locked)
                     self.assertTrue(lock is l3)
+                    self.assertTrue(l1 is l3)
+                    self.assertTrue(l2 is l3)
 
                 self.assertTrue(lock.is_locked)
             self.assertTrue(lock.is_locked)
@@ -177,7 +182,7 @@ class BaseTest(object):
         self.assertFalse(lock.is_locked)
         return None
 
-    def test_threaded(self):
+    def test_threaded1(self):
         """
         Runs 250 threads, which need the filelock. The lock must be acquired
         if at least one thread required it and released, as soon as all threads
@@ -202,7 +207,7 @@ class BaseTest(object):
         self.assertFalse(lock.is_locked)
         return None
 
-    def test_threaded1(self):
+    def test_threaded2(self):
         """
         Runs multiple threads, which acquire the same lock file with a different
         FileLock object. When thread group 1 acquired the lock, thread group 2
@@ -303,7 +308,7 @@ class BaseTest(object):
         self.assertFalse(lock2.is_locked)
         return None
 
-    def test_context(self):
+    def test_exception1(self):
         """
         Tests, if the filelock is released, when an exception is thrown in
         a with-statement.
@@ -319,7 +324,7 @@ class BaseTest(object):
             self.assertFalse(lock.is_locked)
         return None
 
-    def test_context1(self):
+    def test_exception2(self):
         """
         The same as *test_context1()*, but uses the *acquire()* method.
         """
@@ -354,6 +359,7 @@ class BaseTest(object):
         # Delete lock 1 and try to acquire lock 2 again.
         del lock1
 
+        # Acquire lock 2
         lock2.acquire()
         self.assertTrue(lock2.is_locked)
 

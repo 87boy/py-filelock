@@ -29,10 +29,10 @@ A platform independent file lock that supports the with-statement.
 
 # Modules
 # ------------------------------------------------
-import logging
 import os
-import threading
 import time
+import logging
+import threading
 
 try:
     import warnings
@@ -88,34 +88,29 @@ class Timeout(TimeoutError):
     """
 
     def __init__(self, lock_file):
-        """
-        """
-        #: The path of the file lock.
+        # The path of the file lock.
         self.lock_file = lock_file
-        return None
 
     def __str__(self):
-        temp = "The file lock '{}' could not be acquired." \
+        return "The file lock '{}' could not be acquired." \
             .format(self.lock_file)
-        return temp
 
 
 # Classes
 # ------------------------------------------------
 
-# This is a helper class which is returned by :meth:`BaseFileLock.acquire`
+# This is a helper class which is returned by :method:`BaseFileLock.acquire`
 # and wraps the lock to make sure __enter__ is not called twice when entering
 # the with statement.
 # If we would simply return *self*, the lock would be acquired again
 # in the *__enter__* method of the BaseFileLock, but not released again
 # automatically.
 #
-# :seealso: issue #37 (memory leak)
+# :see also: issue #37 (memory leak)
 class _Acquire_ReturnProxy(object):
 
     def __init__(self, lock):
         self.lock = lock
-        return None
 
     def __enter__(self):
         return self.lock
@@ -131,8 +126,6 @@ class BaseFileLock(object):
     """
 
     def __init__(self, lock_file, timeout=-1):
-        """
-        """
         # The path to the lock file.
         self._lock_file = lock_file
 
@@ -149,10 +142,9 @@ class BaseFileLock(object):
         self._thread_lock = threading.Lock()
 
         # The lock counter is used for implementing the nested locking
-        # mechanism. Whenever the lock is acquired, the counter is increased and
-        # the lock is only released, when this value is 0 again.
+        # mechanism. Whenever the lock is acquired, the counter is increased
+        # and the lock is only released, when this value is 0 again.
         self._lock_counter = 0
-        return None
 
     @property
     def lock_file(self):
@@ -173,16 +165,13 @@ class BaseFileLock(object):
         A timeout of 0 means, that there is exactly one attempt to acquire the
         file lock.
 
-        .. versionadded:: 2.0.0
+        .. version added:: 2.0.0
         """
         return self._timeout
 
     @timeout.setter
     def timeout(self, value):
-        """
-        """
         self._timeout = float(value)
-        return None
 
     # Platform dependent locking
     # --------------------------------------------
@@ -209,13 +198,13 @@ class BaseFileLock(object):
         """
         True, if the object holds the file lock.
 
-        .. versionchanged:: 2.0.0
+        .. version changed:: 2.0.0
 
             This was previously a method and is now a property.
         """
         return self._lock_file_fd is not None
 
-    def acquire(self, timeout=None, poll_intervall=0.05):
+    def acquire(self, timeout=None, poll_interval=0.05):
         """
         Acquires the file lock or fails with a :exc:`Timeout` error.
 
@@ -238,14 +227,14 @@ class BaseFileLock(object):
             block until the lock could be acquired.
             If ``timeout`` is None, the default :attr:`~timeout` is used.
 
-        :arg float poll_intervall:
-            We check once in *poll_intervall* seconds if we can acquire the
+        :arg float poll_interval:
+            We check once in *poll_interval* seconds if we can acquire the
             file lock.
 
         :raises Timeout:
             if the lock could not be acquired in *timeout* seconds.
 
-        .. versionchanged:: 2.0.0
+        .. version changed:: 2.0.0
 
             This method returns now a *proxy* object instead of *self*,
             so that it can be used in a with statement without side effects.
@@ -266,26 +255,27 @@ class BaseFileLock(object):
             while True:
                 with self._thread_lock:
                     if not self.is_locked:
-                        logger().debug('Attempting to acquire lock %s on %s', lock_id, lock_filename)
+                        logger().debug('Attempting to acquire lock %s on %s',
+                                       lock_id, lock_filename)
                         self._acquire()
 
                 if self.is_locked:
-                    logger().info('Lock %s acquired on %s', lock_id, lock_filename)
+                    logger().info('Lock %s acquired on %s',
+                                  lock_id, lock_filename)
                     break
-                elif timeout >= 0 and time.time() - start_time > timeout:
-                    logger().debug('Timeout on acquiring lock %s on %s', lock_id, lock_filename)
+                elif (timeout >= 0) and ((time.time() - start_time) > timeout):
+                    logger().debug('Timeout on acquiring lock %s on %s',
+                                   lock_id, lock_filename)
                     raise Timeout(self._lock_file)
                 else:
                     logger().debug(
                         'Lock %s not acquired on %s, waiting %s seconds ...',
-                        lock_id, lock_filename, poll_intervall
-                    )
-                    time.sleep(poll_intervall)
+                        lock_id, lock_filename, poll_interval)
+                    time.sleep(poll_interval)
         except:
             # Something did go wrong, so decrement the counter.
             with self._thread_lock:
                 self._lock_counter = max(0, self._lock_counter - 1)
-
             raise
         return _Acquire_ReturnProxy(lock=self)
 
@@ -293,7 +283,7 @@ class BaseFileLock(object):
         """
         Releases the file lock.
 
-        Please note, that the lock is only completly released, if the lock
+        Please note, that the lock is only completely released, if the lock
         counter is 0.
 
         Also note, that the lock file itself is not automatically deleted.
@@ -311,10 +301,12 @@ class BaseFileLock(object):
                     lock_id = id(self)
                     lock_filename = self._lock_file
 
-                    logger().debug('Attempting to release lock %s on %s', lock_id, lock_filename)
+                    logger().debug('Attempting to release lock %s on %s',
+                                   lock_id, lock_filename)
                     self._release()
                     self._lock_counter = 0
-                    logger().info('Lock %s released on %s', lock_id, lock_filename)
+                    logger().info('Lock %s released on %s',
+                                  lock_id, lock_filename)
 
         return None
 
