@@ -6,7 +6,6 @@ from filelock import FileLock
 
 lock = FileLock("my_lock")
 with lock:
-  print("This is process {}.".format(sys.argv[1]))
-  sleep(1)
-  print("Bye.")
-
+    print("This is process {}.".format(sys.argv[1]))
+    sleep(1)
+    print("Bye.")

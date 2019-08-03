@@ -39,19 +39,19 @@ except (OSError, IOError):
     long_description = "not available"
 
 setup(
-    name = "filelock",
-    version = __version__,
-    description = "A platform independent file lock.",
-    long_description = long_description,
-    long_description_content_type = "text/markdown",
-    author = "Benedikt Schmitt",
-    author_email = "benedikt@benediktschmitt.de",
-    url = "https://github.com/benediktschmitt/py-filelock",
-    download_url = "https://github.com/benediktschmitt/py-filelock/archive/master.zip",
-    py_modules = ["filelock"],
-    license = "Public Domain <http://unlicense.org>",
+    name="filelock",
+    version=__version__,
+    description="A platform independent file lock.",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    author="Benedikt Schmitt",
+    author_email="benedikt@benediktschmitt.de",
+    url="https://github.com/benediktschmitt/py-filelock",
+    download_url="https://github.com/benediktschmitt/py-filelock/archive/master.zip",
+    py_modules=["filelock"],
+    license="Public Domain <http://unlicense.org>",
     test_suite="test",
-    classifiers = [
+    classifiers=[
         "License :: Public Domain",
         "Development Status :: 5 - Production/Stable",
         "Operating System :: OS Independent",
@@ -67,5 +67,5 @@ setup(
         "Topic :: System",
         "Topic :: Internet",
         "Topic :: Software Development :: Libraries"
-        ],
-    )
+    ],
+)

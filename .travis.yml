@@ -17,7 +17,7 @@ matrix:
     - python: "3.8-dev"
 
 install:
-    - pip install -e .
+  - pip install -e .
 
 script:
-    - pytest -xvv test.py
+  - pytest -xvv test.py
