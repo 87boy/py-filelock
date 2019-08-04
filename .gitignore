@@ -133,3 +133,4 @@ dmypy.json
 docs/build
 
 test.lock
+test.softlock

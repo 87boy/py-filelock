@@ -77,13 +77,21 @@ class BaseTest(object):
     # The path to the lockfile.
     LOCK_PATH = "test.lock"
 
+    # A directory in which nothing can be created (rights = 0x000)
+    UNWRITABLE = "unwritable"
+
     def setUp(self):
         """Deletes the potential lock file at :attr:`LOCK_PATH`."""
         try:
             os.remove(self.LOCK_PATH)
-        except OSError as e:
+        except OSError as err:
             # FileNotFound
-            if e.errno != errno.ENOENT:
+            if err.errno != errno.ENOENT:
+                raise
+        try:
+            os.rmdir(self.UNWRITABLE)
+        except OSError as err:
+            if err.errno != errno.ENOENT:
                 raise
         return None
 
@@ -91,9 +99,14 @@ class BaseTest(object):
         """Deletes the potential lock file at :attr:`LOCK_PATH`."""
         try:
             os.remove(self.LOCK_PATH)
-        except OSError as e:
+        except OSError as err:
             # FileNotFound
-            if e.errno != errno.ENOENT:
+            if err.errno != errno.ENOENT:
+                raise
+        try:
+            os.rmdir(self.UNWRITABLE)
+        except OSError as err:
+            if err.errno != errno.ENOENT:
                 raise
         return None
 
@@ -104,9 +117,9 @@ class BaseTest(object):
         """
         lock = self.LOCK_TYPE(self.LOCK_PATH)
 
-        with lock as l:
+        with lock as lock1:
             self.assertTrue(lock.is_locked)
-            self.assertTrue(lock is l)
+            self.assertTrue(lock is lock1)
         self.assertFalse(lock.is_locked)
         return None
 
@@ -117,20 +130,20 @@ class BaseTest(object):
         """
         lock = self.LOCK_TYPE(self.LOCK_PATH)
 
-        with lock as l1:
+        with lock as lock1:
             self.assertTrue(lock.is_locked)
-            self.assertTrue(lock is l1)
+            self.assertTrue(lock is lock1)
 
-            with lock as l2:
+            with lock as lock2:
                 self.assertTrue(lock.is_locked)
-                self.assertTrue(lock is l2)
-                self.assertTrue(l1 is l2)
+                self.assertTrue(lock is lock2)
+                self.assertTrue(lock1 is lock2)
 
-                with lock as l3:
+                with lock as lock3:
                     self.assertTrue(lock.is_locked)
-                    self.assertTrue(lock is l3)
-                    self.assertTrue(l1 is l3)
-                    self.assertTrue(l2 is l3)
+                    self.assertTrue(lock is lock3)
+                    self.assertTrue(lock1 is lock3)
+                    self.assertTrue(lock2 is lock3)
 
                 self.assertTrue(lock.is_locked)
             self.assertTrue(lock.is_locked)
@@ -144,20 +157,20 @@ class BaseTest(object):
         """
         lock = self.LOCK_TYPE(self.LOCK_PATH)
 
-        with lock.acquire() as l1:
+        with lock.acquire() as lock1:
             self.assertTrue(lock.is_locked)
-            self.assertTrue(lock is l1)
+            self.assertTrue(lock is lock1)
 
-            with lock.acquire() as l2:
+            with lock.acquire() as lock2:
                 self.assertTrue(lock.is_locked)
-                self.assertTrue(lock is l2)
-                self.assertTrue(l1 is l2)
+                self.assertTrue(lock is lock2)
+                self.assertTrue(lock1 is lock2)
 
-                with lock.acquire() as l3:
+                with lock.acquire() as lock3:
                     self.assertTrue(lock.is_locked)
-                    self.assertTrue(lock is l3)
-                    self.assertTrue(l1 is l3)
-                    self.assertTrue(l2 is l3)
+                    self.assertTrue(lock is lock3)
+                    self.assertTrue(lock1 is lock3)
+                    self.assertTrue(lock2 is lock3)
 
                 self.assertTrue(lock.is_locked)
             self.assertTrue(lock.is_locked)
@@ -276,7 +289,7 @@ class BaseTest(object):
         self.assertFalse(lock2.is_locked)
         return None
 
-    def test_default_timeout(self):
+    def test_timeout_default(self):
         """
         Test if the default timeout parameter works.
         """
@@ -364,6 +377,24 @@ class BaseTest(object):
         self.assertTrue(lock2.is_locked)
 
         lock2.release()
+        return None
+
+    def test_unwritable(self):
+        """Ensure graceful failure of lock when path is unwritable."""
+        # Create a directory in which we cannot create a file
+        try:
+            os.mkdir(self.UNWRITABLE, 0)
+        except:
+            self.fail("Could not create unwritable directory")
+
+        lock = self.LOCK_TYPE(os.path.join(self.UNWRITABLE, self.LOCK_PATH))
+
+        # Make sure to catch only OSError and not Timeout error,
+        # as Timeout unfortunately inherits OSError.
+        try:
+            lock.acquire(timeout=0)
+        except OSError as err:
+            self.assertFalse(isinstance(err, filelock.Timeout))
         return None
 
 
